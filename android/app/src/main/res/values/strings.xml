@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">easyscan</string>
+    <string name="title_activity_main">easyscan</string>
+    <string name="package_name">fr.misoda.easyscan</string>
+    <string name="custom_url_scheme">fr.misoda.easyscan</string>
+</resources>

@@ -1,0 +1,13 @@
+{
+  "appId": "fr.misoda.easyscan",
+  "appName": "easyscan",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  },
+  "cordova": {}
+}
