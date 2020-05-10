@@ -133,4 +133,27 @@ export class ScanService {
       reader.readAsDataURL(blob);
     });
   }
+
+  public async deleteDocument(document: Document, position: number) {
+    // Remove this document from the Documents reference data array
+    this.documents.splice(position, 1);
+
+    // Update documents array cached by overwriting the existing photo array
+    Storage.set({
+      key: this.DOCUMENT_STORAGE,
+      value: JSON.stringify(this.documents)
+    });
+
+    // delete doc file from the filesystem
+    const fileName = document.filePath.substr(document.filePath.lastIndexOf('/' + 1));
+
+    try {
+      await Filesystem.deleteFile({
+        path: fileName,
+        directory: FilesystemDirectory.Data
+      })
+    } catch (e) {
+      console.log('igored');
+    }
+  }
 }

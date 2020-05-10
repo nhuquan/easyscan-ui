@@ -9,7 +9,10 @@
     <ion-row>
       <ion-col size="6"
                *ngFor="let document of scanService.documents; index as position">
-        <ion-img src="{{ document.base64? document.base64 : document.webviewPath }}"></ion-img>
+
+        <ion-img src="{{ document.base64? document.base64 : document.webviewPath }}"
+                (click)="showActionSheet(document, position)"></ion-img>
+
       </ion-col>
     </ion-row>
   </ion-grid>
