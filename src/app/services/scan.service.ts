@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
-import { CameraPhoto, CameraResultType, CameraSource, Capacitor, Filesystem, FilesystemDirectory, Plugins } from '@capacitor/core';
+import { CameraPhoto, CameraResultType, CameraSource, Capacitor, FilesystemDirectory, Plugins } from '@capacitor/core';
 import { Document } from '../domain/document';
 import { Platform } from '@ionic/angular';
-import { tryCatch } from 'rxjs/internal-compatibility';
 
-const { Camera, FileSystem, Storage } = Plugins;
+const { Camera, Filesystem, Storage } = Plugins;
 
 @Injectable({
   providedIn: 'root'
@@ -17,36 +16,6 @@ export class ScanService {
 
   constructor( platform: Platform) {
     this.platform = platform;
-  }
-
-  public async addNewToGallery() {
-    // Take a photo
-    try {
-      debugger
-      const capturedPhoto = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Camera,
-        quality: 100
-      });
-
-      const savedImageFile = await this.savePicture(capturedPhoto);
-      this.documents.unshift(savedImageFile);
-
-      Storage.set({
-        key: this.DOCUMENT_STORAGE,
-        value: this.platform.is('hybrid')
-            ? JSON.stringify(this.documents)
-            : JSON.stringify(this.documents.map(d => {
-              // Don't save the base64 of the photo data
-              // since it's already saved on the Filesystem
-              const documentCopy = { ...d };
-              delete documentCopy.base64;
-              return documentCopy;
-            }))
-      });
-    } catch (e) {
-      console.log('no photo taken');
-    }
   }
 
   public async loadSaved() {
@@ -71,7 +40,39 @@ export class ScanService {
     }
   }
 
-  public async savePicture(cameraPhoto: CameraPhoto) {
+  public async addNewToGallery() {
+    // Take a photo
+    try {
+      const capturedPhoto = await Camera.getPhoto({
+        resultType: CameraResultType.Uri, // file-based data; provides best performance
+        source: CameraSource.Camera, // automatically take a new photo with the camera
+        quality: 50 // quality (0 to 100)
+      });
+
+      const savedImageFile = await this.savePicture(capturedPhoto);
+
+      // Add new document
+      this.documents.unshift(savedImageFile);
+
+      // Cache all photo data for future retrieval
+      Storage.set({
+        key: this.DOCUMENT_STORAGE,
+        value: this.platform.is('hybrid')
+            ? JSON.stringify(this.documents)
+            : JSON.stringify(this.documents.map(d => {
+              // Don't save the base64 of the photo data
+              // since it's already saved on the Filesystem
+              const documentCopy = { ...d };
+              delete documentCopy.base64;
+              return documentCopy;
+            }))
+      });
+    } catch (e) {
+      console.log('no photo taken', e);
+    }
+  }
+
+  private async savePicture(cameraPhoto: CameraPhoto) {
     // Convert photo to base64 format, required by Filesystem API to save
     const base64data = await this.readAsBase64(cameraPhoto);
 
@@ -104,10 +105,15 @@ export class ScanService {
     // "hybrid" will detect Cordova or Capacitor
     if (this.platform.is('hybrid')) {
       // Read the file into base64
-      const file = await Filesystem.readFile({
-        path: cameraPhoto.path
-      });
-      return file.data;
+      try {
+        const file = await Filesystem.readFile({
+          path: cameraPhoto.path
+        });
+
+        return file.data;
+      } finally {
+        console.log('finally');
+      }
     } else {
       // on web, fetch the photo, read as blob, then convert to base64 format
       const response = await fetch(cameraPhoto.webPath);
